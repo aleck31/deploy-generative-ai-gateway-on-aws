@@ -3,9 +3,12 @@
 > **Fork 说明**：本仓库 fork 自 [aws-solutions-library-samples](https://github.com/aws-solutions-library-samples/guidance-for-multi-provider-generative-ai-gateway-on-aws)，包含以下修复和增强：
 >
 > - 修复 middleware `requests` 依赖缺失（导致容器崩溃循环重启）
-> - VPC CIDR 参数化：通过 `.env` 中 `VPC_CIDR_BLOCK` 自定义（默认 `10.31.0.0/16`）
+> - 简化模型配置：用 `config/models.yaml` + `generate-config.py` 替代 per-region yaml 文件
+> - VPC CIDR 参数化：通过 `.env` 中 `VPC_CIDR_BLOCK` 自定义
 > - ALB 安全组参数化：支持自定义 Prefix List 和 CloudFront origin prefix list
-> - ECS 内存参数化：通过 `.env` 中 `ECS_MEMORY_GB` 自定义（默认 `6`）
+> - ECS 内存参数化：通过 `.env` 中 `ECS_MEMORY_GB` 自定义
+> - 新增 `BEDROCK_INFERENCE_REGION` 参数，支持跨区域调用 Bedrock 模型
+> - 部署完成后自动输出 Master Key 和访问地址
 
 ## Table of contents
 
@@ -375,47 +378,37 @@ This guidance implements several security best practices and AWS services to enh
 
 ### Supported AWS Regions
 
-As of March, 2025 `Guidance for Multi-Provider Generative AI Gateway on AWS` is supported in the following AWS Regions:
-
-| **Region Name**               |**Region Code**  |
-| ----------------------------- |--|
-| US East (Ohio)                | us-east-1 |
-| US East (N. Virginia)         | us-east-2 |
-| US West (Northern California) | us-west-1 |
-| US West (Oregon)              | us-west-2 |
-| Europe (Paris)                | eu-west-3 |
-| Canada (Central)              | ca-central-1|
-| South America (São Paulo)     | sa-east-1 |
-| Europe (Frankfurt)            | eu-central-1 |
-| Europe (Ireland)              | eu-west-1 |
-| Europe (London)               | eu-west-2 | 
-| Europe (Paris)                | eu-west-3 |
-| Europe (Stockholm)            | eu-north-1 |
-| Europe (Milan)                | eu-south-1 |
-| Europe (Spain)                | eu-south-2 |
-| Europe (Zurich)               | eu-central-2 | 
+This guidance can be deployed in any AWS Region where Amazon Bedrock is available. See [Amazon Bedrock supported regions](https://docs.aws.amazon.com/bedrock/latest/userguide/bedrock-regions.html) for the full list.
 
 
 ### Quotas
 
-Service quotas, also referred to as limits, are the maximum number of service resources or operations for your AWS account.
-
-### Quotas for AWS services in this Guidance
-
-Make sure you have sufficient quota for each of the services implemented in this guidance. For more information, see [AWS service
-quotas](https://docs.aws.amazon.com/general/latest/gr/aws_service_limits.html).
-
-To view the service quotas for all AWS services in the documentation without switching pages, view the information in the [Service endpoints and
-quotas](https://docs.aws.amazon.com/general/latest/gr/aws-general.pdf#aws-service-information) page in the PDF format instead.
+Ensure you have sufficient [AWS service quotas](https://docs.aws.amazon.com/general/latest/gr/aws_service_limits.html) for ECS/EKS, VPC, ALB, RDS, and ElastiCache in your deployment region.
 
 ## How to deploy
 
-Please find detailed guidance deployment and usage instructions in the Implementation Guide [here](https://aws-solutions-library-samples.github.io/ai-ml/guidance-for-multi-provider-generative-ai-gateway-on-aws.html )
+```bash
+# 1. Configure
+cp .env.template .env
+# Edit .env: set LITELLM_VERSION, BEDROCK_INFERENCE_REGION, VPC_CIDR_BLOCK, etc.
+#   DEPLOYMENT_PLATFORM     — ECS or EKS
+#   BEDROCK_INFERENCE_REGION — Region for Bedrock model calls (empty = deployment region)
+#   ECS_VCPUS / ECS_MEMORY_GB — Compute resources
+#   ALB_ALLOWED_PREFIX_LIST_ID — Restrict ALB ingress to a prefix list
+#   USE_CLOUDFRONT / USE_ROUTE53 — Distribution options (see Distribution Options)
 
-## Workshop
+# 2. Customize model list
+vi config/models.yaml
 
-Follow the step-by-step instructions provided in this [workshop](https://catalog.us-east-1.prod.workshops.aws/workshops/db0f23ea-2442-4962-9a54-04dcdab7de59/en-US) for a deep dive hands-on experience.
+# 3. Deploy
+./deploy.sh
 
+# 4. Update models (after editing models.yaml)
+./update-litellm-config.sh
+
+# 5. Undeploy
+./undeploy.sh
+```
 
 ## Open Source Library
 
