@@ -99,7 +99,6 @@ module "ecs_cluster" {
   disable_swagger_page = var.disable_swagger_page
   disable_admin_ui = var.disable_admin_ui
   alb_allowed_prefix_list_id = var.alb_allowed_prefix_list_id
-  vpc_cidr_block = var.vpc_cidr_block
   ecs_memory_gb = var.ecs_memory_gb
   langfuse_public_key = var.langfuse_public_key
   langfuse_secret_key = var.langfuse_secret_key
@@ -198,8 +197,6 @@ module "eks_cluster" {
   disable_swagger_page = var.disable_swagger_page
   disable_admin_ui = var.disable_admin_ui
   alb_allowed_prefix_list_id = var.alb_allowed_prefix_list_id
-  vpc_cidr_block = var.vpc_cidr_block
-  ecs_memory_gb = var.ecs_memory_gb
   langfuse_public_key = var.langfuse_public_key
   langfuse_secret_key = var.langfuse_secret_key
   langfuse_host = var.langfuse_host

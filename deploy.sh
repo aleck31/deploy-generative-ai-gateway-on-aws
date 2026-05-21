@@ -4,41 +4,14 @@ set -aeuo pipefail
 aws_region=$(aws ec2 describe-availability-zones --output text --query 'AvailabilityZones[0].[RegionName]')
 echo $aws_region
 
-# Check if config.yaml exists
+# Load environment variables early for config generation
+source .env
+
+# Generate config.yaml from models.yaml + base settings
 if [ ! -f "config/config.yaml" ]; then
-  echo "config/config.yaml does not exist, creating it by merging base and region-specific configs"
-  
-  # Define the file paths
-  base_config="config/default-config-base.yaml"
-  region_config="config/default-config-${aws_region}.yaml"
-  
-  # Check if the base config exists
-  if [ ! -f "$base_config" ]; then
-    echo "Error: Base config file $base_config not found"
-    exit 1
-  fi
-  
-  # Check if the region-specific config exists
-  if [ ! -f "$region_config" ]; then
-    echo "Error: Region-specific config file $region_config for region $aws_region not found"
-    exit 1
-  fi
-  
-  echo "Merging $base_config with $region_config for region $aws_region"
-  
-  # Extract model lists from both files and combine them
-  yq eval-all '
-    select(fileIndex == 0).model_list + select(fileIndex == 1).model_list
-  ' "$base_config" "$region_config" > "config/combined_models.yaml"
-  
-  # Get the base config without model_list
-  yq eval 'del(.model_list)' "$base_config" > "config/config.yaml.tmp"
-  
-  # Add the combined model_list to the base config
-  yq eval '.model_list = load("config/combined_models.yaml")' "config/config.yaml.tmp" > "config/config.yaml"
-  
-  # Clean up temporary files
-  rm "config/combined_models.yaml" "config/config.yaml.tmp"
+  echo "Generating config/config.yaml from models.yaml..."
+  export BEDROCK_INFERENCE_REGION=${BEDROCK_INFERENCE_REGION:-$aws_region}
+  python3 scripts/generate-config.py
 fi
 
 if [ ! -f ".env" ]; then
@@ -457,6 +430,25 @@ if [ $? -eq 0 ]; then
     fi
     
     echo "✓ Deployment completed successfully"
+
+    # Output access info
+    echo ""
+    echo "========================================="
+    echo "  Deployment Summary"
+    echo "========================================="
+    MASTER_SECRET=$(aws secretsmanager list-secrets --query "SecretsList[?contains(Name,'MasterSalt')].Name" --output text)
+    if [ -n "$MASTER_SECRET" ]; then
+        MASTER_KEY=$(aws secretsmanager get-secret-value --secret-id "$MASTER_SECRET" --query "SecretString" --output text | python3 -c "import json,sys;print(json.loads(sys.stdin.read())['LITELLM_MASTER_KEY'])")
+        echo "  Master Key:  $MASTER_KEY"
+    fi
+    if [ "$USE_ROUTE53" = "true" ]; then
+        echo "  Admin UI:    https://${RECORD_NAME}.${HOSTED_ZONE_NAME}/ui/"
+        echo "  API Base:    https://${RECORD_NAME}.${HOSTED_ZONE_NAME}"
+    else
+        ALB_DNS=$(terraform output -raw LoadBalancerDNS 2>/dev/null || echo "")
+        echo "  ALB DNS:     $ALB_DNS"
+    fi
+    echo "========================================="
 else
     echo "Deployment failed"
 fi

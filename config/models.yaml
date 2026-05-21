@@ -1,0 +1,101 @@
+# Bedrock model list
+# Format: name + id, api_route optional (defaults to bedrock/)
+# api_route: bedrock/ = converse API, bedrock/invoke = invoke API
+
+# Claude
+- name: claude-opus-4-7
+  id: global.anthropic.claude-opus-4-7
+
+- name: claude-opus-4-6
+  id: global.anthropic.claude-opus-4-6-v1
+
+- name: claude-sonnet-4-6
+  id: global.anthropic.claude-sonnet-4-6
+
+- name: claude-sonnet-4-5
+  id: global.anthropic.claude-sonnet-4-5-20250929-v1:0
+
+- name: claude-haiku-4-5
+  id: global.anthropic.claude-haiku-4-5-20251001-v1:0
+
+# Claude Code (invoke API)
+- name: cc-claude-opus-4-7
+  id: global.anthropic.claude-opus-4-7
+  api_route: bedrock/invoke
+
+- name: cc-claude-opus-4-6
+  id: global.anthropic.claude-opus-4-6-v1
+  api_route: bedrock/invoke
+
+- name: cc-claude-sonnet-4-6
+  id: global.anthropic.claude-sonnet-4-6
+  api_route: bedrock/invoke
+
+- name: cc-claude-sonnet-4-5
+  id: global.anthropic.claude-sonnet-4-5-20250929-v1:0
+  api_route: bedrock/invoke
+
+- name: cc-claude-haiku-4-5
+  id: global.anthropic.claude-haiku-4-5-20251001-v1:0
+  api_route: bedrock/invoke
+
+# Qwen
+- name: qwen3-235b
+  id: qwen.qwen3-235b-a22b-2507-v1:0
+
+- name: qwen3-next-80b
+  id: qwen.qwen3-next-80b-a3b
+
+- name: qwen3-32b
+  id: qwen.qwen3-32b-v1:0
+
+# DeepSeek
+- name: deepseek-v3
+  id: deepseek.v3.2
+
+- name: deepseek-r1
+  id: us.deepseek.r1-v1:0
+
+# GLM
+- name: glm-5
+  id: zai.glm-5
+
+- name: glm-4.7
+  id: zai.glm-4.7
+
+- name: glm-4.7-flash
+  id: zai.glm-4.7-flash
+
+# GPT-OSS
+- name: gpt-oss-120b
+  id: openai.gpt-oss-120b-1:0
+
+- name: gpt-oss-20b
+  id: openai.gpt-oss-20b-1:0
+
+# Amazon Nova
+- name: nova-pro
+  id: us.amazon.nova-pro-v1:0
+
+- name: nova-2-lite
+  id: global.amazon.nova-2-lite-v1:0
+
+# Other
+- name: kimi-k2.5
+  id: moonshotai.kimi-k2.5
+
+- name: mistral-large-3
+  id: mistral.mistral-large-3-675b-instruct
+
+- name: devstral-2
+  id: mistral.devstral-2-123b
+
+# Embedding
+- name: embed-v4
+  id: us.cohere.embed-v4:0
+
+- name: embed-english-v3
+  id: cohere.embed-english-v3
+
+- name: embed-multilingual-v3
+  id: cohere.embed-multilingual-v3

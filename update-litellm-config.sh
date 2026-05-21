@@ -7,6 +7,11 @@ echo $aws_region
 # Load environment variables from .env file
 source .env
 
+# Regenerate config.yaml from models.yaml
+echo "Regenerating config/config.yaml from models.yaml..."
+export BEDROCK_INFERENCE_REGION=${BEDROCK_INFERENCE_REGION:-$aws_region}
+python3 scripts/generate-config.py
+
 # Check if config.yaml exists
 if [ ! -f "config/config.yaml" ]; then
   echo "config/config.yaml does not exist, can't upload to S3"
