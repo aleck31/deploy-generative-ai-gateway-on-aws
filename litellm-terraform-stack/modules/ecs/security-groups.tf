@@ -78,7 +78,8 @@ resource "aws_security_group" "alb_sg" {
     protocol    = "tcp"
     from_port   = 443
     to_port     = 443
-    cidr_blocks = var.public_load_balancer ? ["0.0.0.0/0"] : var.private_subnets_cidr_blocks
+    cidr_blocks = var.alb_allowed_prefix_list_id == "" ? (var.public_load_balancer ? ["0.0.0.0/0"] : var.private_subnets_cidr_blocks) : null
+    prefix_list_ids = var.alb_allowed_prefix_list_id != "" ? [var.alb_allowed_prefix_list_id] : null
   }
   
   # Add HTTP ingress for CloudFront origin connections
@@ -88,7 +89,8 @@ resource "aws_security_group" "alb_sg" {
     protocol    = "tcp"
     from_port   = 80
     to_port     = 80
-    cidr_blocks = var.public_load_balancer ? ["0.0.0.0/0"] : var.private_subnets_cidr_blocks
+    cidr_blocks = var.alb_allowed_prefix_list_id == "" ? (var.public_load_balancer ? ["0.0.0.0/0"] : var.private_subnets_cidr_blocks) : null
+    prefix_list_ids = var.alb_allowed_prefix_list_id != "" ? [var.alb_allowed_prefix_list_id] : null
   }
 
   tags = {

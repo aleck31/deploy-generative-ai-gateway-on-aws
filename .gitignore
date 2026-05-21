@@ -1,10 +1,16 @@
 .env
+**.env.testing
+**error.txt
+**.env
+**/myenv/
+**/fresh_venv/
 config/config.yaml
 config/local-config.yaml
 
 .*.sw?
 **/.DS_Store
 .idea/
+.dev
 .aws-sam/
 .vscode/settings.json
 **/.vim/
@@ -17,13 +23,11 @@ node_modules
 cdk.out
 cdk.context.json
 litellm-source
-
 litellm-cdk/resources.txt
 
 **/outputs.json
+deploy.log
 
-**/myenv/
-**/fresh_venv/
 *.pyc
 .terraform.lock.hcl
 .terraform
@@ -32,9 +36,6 @@ terraform.tfstate.backup
 .terraform.tfstate.lock.info
 terraform.tfstate.*
 
-**.env.testing
-**error.txt
-**.env
 sessionmanager-bundle.zip
 sessionmanager-bundle
 backend.hcl

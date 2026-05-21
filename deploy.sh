@@ -368,6 +368,7 @@ export TF_VAR_redis_node_type=$REDIS_NODE_TYPE
 export TF_VAR_redis_num_cache_clusters=$REDIS_NUM_CACHE_CLUSTERS
 export TF_VAR_disable_swagger_page=$DISABLE_SWAGGER_PAGE
 export TF_VAR_disable_admin_ui=$DISABLE_ADMIN_UI
+export TF_VAR_alb_allowed_prefix_list_id=$ALB_ALLOWED_PREFIX_LIST_ID
 export TF_VAR_langfuse_public_key=$LANGFUSE_PUBLIC_KEY
 export TF_VAR_langfuse_secret_key=$LANGFUSE_SECRET_KEY
 export TF_VAR_use_route53=$USE_ROUTE53

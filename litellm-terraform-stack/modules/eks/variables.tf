@@ -363,3 +363,8 @@ variable "langfuse_host" {
   type    = string
   description = "the hostname of your langfuse deployment."
 }
+variable "alb_allowed_prefix_list_id" {
+  description = "Prefix list ID to restrict ALB ingress. If empty, uses 0.0.0.0/0 or private subnets."
+  type        = string
+  default     = ""
+}

@@ -381,3 +381,9 @@ variable "langfuse_host" {
   description = "the hostname of your langfuse deployment. Optional, defaults to https://cloud.langfuse.com"
   default = "https://cloud.langfuse.com"
 }
+
+variable "alb_allowed_prefix_list_id" {
+  description = "Prefix list ID to restrict ALB ingress"
+  type        = string
+  default     = ""
+}
