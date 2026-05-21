@@ -357,3 +357,9 @@ variable "alb_allowed_prefix_list_id" {
   type        = string
   default     = ""
 }
+
+variable "ecs_memory_gb" {
+  description = "ECS task memory in GB"
+  type        = number
+  default     = 6
+}

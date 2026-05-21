@@ -1,4 +1,11 @@
-# Guidance for Multi-Provider Generative AI Gateway on AWS
+# Deploy Generative AI Gateway on AWS
+
+> **Fork 说明**：本仓库 fork 自 [aws-solutions-library-samples](https://github.com/aws-solutions-library-samples/guidance-for-multi-provider-generative-ai-gateway-on-aws)，包含以下修复和增强：
+>
+> - 修复 middleware `requests` 依赖缺失（导致容器崩溃循环重启）
+> - VPC CIDR 参数化：通过 `.env` 中 `VPC_CIDR_BLOCK` 自定义（默认 `10.31.0.0/16`）
+> - ALB 安全组参数化：支持自定义 Prefix List 和 CloudFront origin prefix list
+> - ECS 内存参数化：通过 `.env` 中 `ECS_MEMORY_GB` 自定义（默认 `6`）
 
 ## Table of contents
 

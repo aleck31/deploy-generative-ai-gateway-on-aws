@@ -80,3 +80,9 @@ variable "use_route53" {
   type        = bool
   default     = false
 }
+
+variable "vpc_cidr_block" {
+  description = "CIDR block for new VPC"
+  type        = string
+  default     = "10.31.0.0/16"
+}

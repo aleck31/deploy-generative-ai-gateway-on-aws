@@ -6,7 +6,7 @@ data "aws_vpc" "existing" {
 # We'll expose a local reference to either the existing VPC or a newly created one:
 resource "aws_vpc" "new" {
   count             = local.creating_new_vpc ? 1 : 0
-  cidr_block        = "10.0.0.0/16"
+  cidr_block        = var.vpc_cidr_block
   enable_dns_hostnames = true
   enable_dns_support   = true
 }

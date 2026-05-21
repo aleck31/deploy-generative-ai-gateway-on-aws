@@ -387,3 +387,15 @@ variable "alb_allowed_prefix_list_id" {
   type        = string
   default     = ""
 }
+
+variable "vpc_cidr_block" {
+  description = "CIDR block for new VPC"
+  type        = string
+  default     = "10.31.0.0/16"
+}
+
+variable "ecs_memory_gb" {
+  description = "ECS task memory in GB"
+  type        = number
+  default     = 6
+}

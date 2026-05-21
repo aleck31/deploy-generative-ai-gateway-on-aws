@@ -68,31 +68,6 @@ resource "aws_security_group" "alb_sg" {
   description = "Security group for ALB"
   vpc_id      = var.vpc_id
 
-  # Public load balancer: Allow HTTPS traffic with WAF protection
-  # Security is provided by:
-  # 1. When CloudFront is enabled: Custom origin header authentication via ALB listener rules
-  # 2. When CloudFront is disabled: WAF rules on the ALB
-  # 3. When private: Only accessible from private subnets
-  ingress {
-    description = "HTTPS traffic"
-    protocol    = "tcp"
-    from_port   = 443
-    to_port     = 443
-    cidr_blocks = var.alb_allowed_prefix_list_id == "" ? (var.public_load_balancer ? ["0.0.0.0/0"] : var.private_subnets_cidr_blocks) : null
-    prefix_list_ids = var.alb_allowed_prefix_list_id != "" ? [var.alb_allowed_prefix_list_id] : null
-  }
-  
-  # Add HTTP ingress for CloudFront origin connections
-  # Security for HTTP is provided by custom header authentication
-  ingress {
-    description = "HTTP traffic for CloudFront origin"
-    protocol    = "tcp"
-    from_port   = 80
-    to_port     = 80
-    cidr_blocks = var.alb_allowed_prefix_list_id == "" ? (var.public_load_balancer ? ["0.0.0.0/0"] : var.private_subnets_cidr_blocks) : null
-    prefix_list_ids = var.alb_allowed_prefix_list_id != "" ? [var.alb_allowed_prefix_list_id] : null
-  }
-
   tags = {
     Name = "${var.name}-alb-sg"
     SecurityModel = var.use_cloudfront ? "CloudFront-Protected" : (var.public_load_balancer ? "Public-WAF-Protected" : "Private-VPC-Only")
@@ -106,4 +81,70 @@ resource "aws_security_group" "alb_sg" {
     to_port     = 0
     cidr_blocks = ["0.0.0.0/0"]
   }
+}
+
+# AWS-managed prefix list for CloudFront origin-facing IPs
+data "aws_ec2_managed_prefix_list" "cloudfront" {
+  count = var.use_cloudfront ? 1 : 0
+  name  = "com.amazonaws.global.cloudfront.origin-facing"
+}
+
+# --- ALB Ingress Rules ---
+
+# Scenario 1: CloudFront enabled - restrict to CloudFront IPs only
+resource "aws_security_group_rule" "alb_ingress_http_cloudfront" {
+  count             = var.use_cloudfront ? 1 : 0
+  type              = "ingress"
+  from_port         = 80
+  to_port           = 80
+  protocol          = "tcp"
+  security_group_id = aws_security_group.alb_sg.id
+  prefix_list_ids   = [data.aws_ec2_managed_prefix_list.cloudfront[0].id]
+  description       = "HTTP from CloudFront origin-facing IPs only"
+}
+
+# Scenario 2: No CloudFront, custom prefix list provided
+resource "aws_security_group_rule" "alb_ingress_https_prefix_list" {
+  count             = !var.use_cloudfront && var.alb_allowed_prefix_list_id != "" ? 1 : 0
+  type              = "ingress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  security_group_id = aws_security_group.alb_sg.id
+  prefix_list_ids   = [var.alb_allowed_prefix_list_id]
+  description       = "HTTPS from allowed prefix list"
+}
+
+resource "aws_security_group_rule" "alb_ingress_http_prefix_list" {
+  count             = !var.use_cloudfront && var.alb_allowed_prefix_list_id != "" ? 1 : 0
+  type              = "ingress"
+  from_port         = 80
+  to_port           = 80
+  protocol          = "tcp"
+  security_group_id = aws_security_group.alb_sg.id
+  prefix_list_ids   = [var.alb_allowed_prefix_list_id]
+  description       = "HTTP from allowed prefix list"
+}
+
+# Scenario 3: No CloudFront, no prefix list - fallback to CIDR
+resource "aws_security_group_rule" "alb_ingress_https_cidr" {
+  count             = !var.use_cloudfront && var.alb_allowed_prefix_list_id == "" ? 1 : 0
+  type              = "ingress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  security_group_id = aws_security_group.alb_sg.id
+  cidr_blocks       = var.public_load_balancer ? ["0.0.0.0/0"] : var.private_subnets_cidr_blocks
+  description       = "HTTPS traffic"
+}
+
+resource "aws_security_group_rule" "alb_ingress_http_cidr" {
+  count             = !var.use_cloudfront && var.alb_allowed_prefix_list_id == "" ? 1 : 0
+  type              = "ingress"
+  from_port         = 80
+  to_port           = 80
+  protocol          = "tcp"
+  security_group_id = aws_security_group.alb_sg.id
+  cidr_blocks       = var.public_load_balancer ? ["0.0.0.0/0"] : var.private_subnets_cidr_blocks
+  description       = "HTTP traffic"
 }

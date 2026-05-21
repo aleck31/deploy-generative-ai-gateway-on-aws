@@ -14,7 +14,7 @@ resource "aws_ecs_task_definition" "litellm" {
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = var.vcpus * 1024
-  memory                   = var.vcpus * 1024 * 4
+  memory                   = var.ecs_memory_gb * 1024
   execution_role_arn       = aws_iam_role.execution_role.arn
   task_role_arn            = aws_iam_role.task_role.arn
 
