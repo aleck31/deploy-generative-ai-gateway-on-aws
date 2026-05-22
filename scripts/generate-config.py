@@ -35,6 +35,22 @@ for item in raw:
 
 config['model_list'] = model_list
 
+# Timezone: LITELLM_TIMEZONE env > local machine timezone > UTC
+import subprocess
+def detect_local_tz():
+    try:
+        return subprocess.check_output(['timedatectl', 'show', '-p', 'Timezone', '--value'], text=True).strip()
+    except Exception:
+        pass
+    try:
+        import time
+        return time.tzname[0]
+    except Exception:
+        return 'UTC'
+
+tz = os.environ.get('LITELLM_TIMEZONE', '').strip() or detect_local_tz()
+config.setdefault('litellm_settings', {})['timezone'] = tz
+
 with open(output_path, 'w') as f:
     yaml.dump(config, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
 
