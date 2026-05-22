@@ -380,6 +380,8 @@ This guidance implements several security best practices and AWS services to enh
 
 This guidance can be deployed in any AWS Region where Amazon Bedrock is available. See [Amazon Bedrock supported regions](https://docs.aws.amazon.com/bedrock/latest/userguide/bedrock-regions.html) for the full list.
 
+> **Note**: AWS China Regions (cn-north-1, cn-northwest-1) are not supported due to differences in service availability.
+
 
 ### Quotas
 

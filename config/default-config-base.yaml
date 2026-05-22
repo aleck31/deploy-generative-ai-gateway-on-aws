@@ -6,11 +6,9 @@ router_settings:
   enable_pre_call_check: true
 environment_variables:
   STORE_MODEL_IN_DB: 'True'
-  LITELLM_LOG: DEBUG
+  LITELLM_LOG: INFO
 litellm_settings:
   cache: true
-  debug: true
-  detailed_debug: true
   cache_params:
     type: redis
     host: os.environ/REDIS_HOST
