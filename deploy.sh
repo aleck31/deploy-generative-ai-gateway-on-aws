@@ -436,7 +436,7 @@ if [ $? -eq 0 ]; then
     echo "========================================="
     echo "  Deployment Summary"
     echo "========================================="
-    MASTER_SECRET=$(aws secretsmanager list-secrets --query "SecretsList[?contains(Name,'MasterSalt')].Name" --output text)
+    MASTER_SECRET=$(aws secretsmanager list-secrets --query "SecretList[?contains(Name,'MasterSalt')].Name" --output text)
     if [ -n "$MASTER_SECRET" ]; then
         MASTER_KEY=$(aws secretsmanager get-secret-value --secret-id "$MASTER_SECRET" --query "SecretString" --output text | python3 -c "import json,sys;print(json.loads(sys.stdin.read())['LITELLM_MASTER_KEY'])")
         echo "  Master Key:  $MASTER_KEY"
