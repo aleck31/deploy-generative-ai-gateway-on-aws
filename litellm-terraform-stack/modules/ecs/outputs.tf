@@ -43,3 +43,8 @@ output "cloudfront_auth_secret" {
   value       = var.use_cloudfront ? random_password.cloudfront_secret[0].result : null
   sensitive   = true
 }
+
+output "AlbPrefixListId" {
+  description = "Prefix List ID for ALB allowed IPs"
+  value       = var.public_load_balancer && !var.use_cloudfront ? local.alb_prefix_list_id : ""
+}

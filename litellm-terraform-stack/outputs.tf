@@ -52,3 +52,7 @@ output "cloudfront_auth_secret" {
   value       = var.use_cloudfront ? try(module.ecs_cluster[0].cloudfront_auth_secret, null) : null
   sensitive   = true
 }
+
+output "AlbPrefixListId" {
+  value = try(module.ecs_cluster[0].AlbPrefixListId, "")
+}

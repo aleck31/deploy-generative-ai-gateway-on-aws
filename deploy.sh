@@ -448,6 +448,10 @@ if [ $? -eq 0 ]; then
         ALB_DNS=$(terraform output -raw LoadBalancerDNS 2>/dev/null || echo "")
         echo "  ALB DNS:     $ALB_DNS"
     fi
+    PL_ID=$(terraform output -raw AlbPrefixListId 2>/dev/null || echo "")
+    if [ -n "$PL_ID" ]; then
+        echo "  Prefix List: $PL_ID (add allowed IPs via Console/CLI)"
+    fi
     echo "========================================="
 else
     echo "Deployment failed"

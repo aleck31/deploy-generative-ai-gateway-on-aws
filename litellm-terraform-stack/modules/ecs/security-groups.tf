@@ -69,11 +69,30 @@ data "aws_ec2_managed_prefix_list" "cloudfront" {
   name  = "com.amazonaws.global.cloudfront.origin-facing"
 }
 
+# Auto-create prefix list if none provided (entries managed outside Terraform)
+resource "aws_ec2_managed_prefix_list" "alb_allowed" {
+  count          = var.public_load_balancer && !var.use_cloudfront && var.alb_allowed_prefix_list_id == "" ? 1 : 0
+  name           = "${var.name}-alb-allowed-ips"
+  address_family = "IPv4"
+  max_entries    = 30
+
+  tags = {
+    Name = "${var.name}-alb-allowed-ips"
+  }
+
+  lifecycle {
+    ignore_changes = [entry]
+  }
+}
+
 locals {
-  # Determine prefix list: CloudFront managed list > custom prefix list > none
-  alb_prefix_list_id = var.use_cloudfront ? data.aws_ec2_managed_prefix_list.cloudfront[0].id : var.alb_allowed_prefix_list_id
-  use_prefix_list    = local.alb_prefix_list_id != ""
-  alb_cidr_blocks    = var.public_load_balancer ? ["0.0.0.0/0"] : var.private_subnets_cidr_blocks
+  # Determine prefix list: CloudFront managed > user-provided > auto-created
+  alb_prefix_list_id = (
+    var.use_cloudfront ? data.aws_ec2_managed_prefix_list.cloudfront[0].id :
+    var.alb_allowed_prefix_list_id != "" ? var.alb_allowed_prefix_list_id :
+    var.public_load_balancer ? aws_ec2_managed_prefix_list.alb_allowed[0].id : ""
+  )
+  alb_cidr_blocks = var.public_load_balancer ? ["0.0.0.0/0"] : var.private_subnets_cidr_blocks
 }
 
 resource "aws_security_group" "alb_sg" {
@@ -86,8 +105,8 @@ resource "aws_security_group" "alb_sg" {
     protocol        = "tcp"
     from_port       = 443
     to_port         = 443
-    cidr_blocks     = local.use_prefix_list ? null : local.alb_cidr_blocks
-    prefix_list_ids = local.use_prefix_list ? [local.alb_prefix_list_id] : null
+    cidr_blocks     = var.public_load_balancer ? null : local.alb_cidr_blocks
+    prefix_list_ids = var.public_load_balancer ? [local.alb_prefix_list_id] : null
   }
 
   ingress {
@@ -95,8 +114,8 @@ resource "aws_security_group" "alb_sg" {
     protocol        = "tcp"
     from_port       = 80
     to_port         = 80
-    cidr_blocks     = local.use_prefix_list ? null : local.alb_cidr_blocks
-    prefix_list_ids = local.use_prefix_list ? [local.alb_prefix_list_id] : null
+    cidr_blocks     = var.public_load_balancer ? null : local.alb_cidr_blocks
+    prefix_list_ids = var.public_load_balancer ? [local.alb_prefix_list_id] : null
   }
 
   tags = {
