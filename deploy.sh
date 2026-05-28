@@ -1,6 +1,24 @@
 #!/bin/bash
 set -aeuo pipefail
 
+# Check for updates
+if git rev-parse --git-dir > /dev/null 2>&1; then
+    CURRENT_TAG=$(git describe --tags --always 2>/dev/null || echo "unknown")
+    echo "Current version: $CURRENT_TAG"
+    git fetch origin --quiet 2>/dev/null || true
+    LOCAL=$(git rev-parse HEAD 2>/dev/null)
+    REMOTE=$(git rev-parse origin/main 2>/dev/null || echo "$LOCAL")
+    if [ "$LOCAL" != "$REMOTE" ]; then
+        LATEST_TAG=$(git describe --tags origin/main --always 2>/dev/null || echo "unknown")
+        echo ""
+        echo -e "\033[33m⚠  New version available: $LATEST_TAG\033[0m"
+        echo -e "\033[33m   Run 'git pull' to upgrade before deploying.\033[0m"
+        echo ""
+        read -p "Skip upgrade and continue deploying? (y/N): " choice
+        [[ "$choice" != "y" && "$choice" != "Y" ]] && exit 0
+    fi
+fi
+
 aws_region=$(aws ec2 describe-availability-zones --output text --query 'AvailabilityZones[0].[RegionName]')
 echo $aws_region
 
