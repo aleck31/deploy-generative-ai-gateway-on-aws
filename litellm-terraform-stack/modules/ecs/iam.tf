@@ -101,6 +101,12 @@ data "aws_iam_policy_document" "task_role_policy_doc" {
   }
 
   statement {
+    sid       = "MarketplaceModelAccess"
+    actions   = ["aws-marketplace:ViewSubscriptions", "aws-marketplace:Subscribe"]
+    resources = ["*"]
+  }
+
+  statement {
     sid       = "SageMakerInvoke"
     actions   = ["sagemaker:InvokeEndpoint"]
     resources = ["*"]
