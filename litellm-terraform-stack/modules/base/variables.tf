@@ -86,3 +86,9 @@ variable "vpc_cidr_block" {
   type        = string
   default     = "10.31.0.0/16"
 }
+
+variable "enable_waf" {
+  description = "Enable WAF Web ACL"
+  type        = bool
+  default     = false
+}

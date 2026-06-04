@@ -33,6 +33,7 @@ module "base" {
   redis_node_type = var.redis_node_type
   redis_num_cache_clusters = var.redis_num_cache_clusters
   use_route53 = var.use_route53
+  enable_waf = var.enable_waf
 }
 
 module "ecs_cluster" {
@@ -100,6 +101,7 @@ module "ecs_cluster" {
   disable_admin_ui = var.disable_admin_ui
   alb_allowed_prefix_list_id = var.alb_allowed_prefix_list_id
   ecs_memory_gb = var.ecs_memory_gb
+  enable_waf = var.enable_waf
   langfuse_public_key = var.langfuse_public_key
   langfuse_secret_key = var.langfuse_secret_key
   langfuse_host = var.langfuse_host
@@ -197,6 +199,7 @@ module "eks_cluster" {
   disable_swagger_page = var.disable_swagger_page
   disable_admin_ui = var.disable_admin_ui
   alb_allowed_prefix_list_id = var.alb_allowed_prefix_list_id
+  enable_waf = var.enable_waf
   langfuse_public_key = var.langfuse_public_key
   langfuse_secret_key = var.langfuse_secret_key
   langfuse_host = var.langfuse_host

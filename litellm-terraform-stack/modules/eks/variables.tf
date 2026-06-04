@@ -368,3 +368,9 @@ variable "alb_allowed_prefix_list_id" {
   type        = string
   default     = ""
 }
+
+variable "enable_waf" {
+  description = "Enable WAF Web ACL"
+  type        = bool
+  default     = false
+}

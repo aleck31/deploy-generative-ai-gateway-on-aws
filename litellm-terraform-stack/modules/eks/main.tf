@@ -286,7 +286,7 @@ resource "kubernetes_ingress_v1" "litellm" {
       "alb.ingress.kubernetes.io/listen-ports"     = jsonencode([{"HTTP" = 80}, {"HTTPS" = 443}])
       "alb.ingress.kubernetes.io/certificate-arn"  = var.certificate_arn
       "alb.ingress.kubernetes.io/ssl-policy"       = "ELBSecurityPolicy-2016-08"
-      "alb.ingress.kubernetes.io/wafv2-acl-arn"   = var.wafv2_acl_arn
+      "alb.ingress.kubernetes.io/wafv2-acl-arn"   = var.enable_waf ? var.wafv2_acl_arn : ""
     }
   }
 

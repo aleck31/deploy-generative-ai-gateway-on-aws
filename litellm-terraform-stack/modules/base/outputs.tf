@@ -62,7 +62,7 @@ output "ConfigBucketArn" {
 
 output "WafAclArn" {
   description = "The ARN of the WAF ACL"
-  value       = aws_wafv2_web_acl.litellm_waf.arn
+  value       = var.enable_waf ? aws_wafv2_web_acl.litellm_waf[0].arn : ""
 }
 
 # ECR Repositories

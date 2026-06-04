@@ -360,6 +360,7 @@ export TF_VAR_redis_num_cache_clusters=$REDIS_NUM_CACHE_CLUSTERS
 export TF_VAR_disable_swagger_page=$DISABLE_SWAGGER_PAGE
 export TF_VAR_disable_admin_ui=$DISABLE_ADMIN_UI
 export TF_VAR_alb_allowed_prefix_list_id=$ALB_ALLOWED_PREFIX_LIST_ID
+export TF_VAR_enable_waf=${ENABLE_WAF:-true}
 export TF_VAR_vpc_cidr_block=$VPC_CIDR_BLOCK
 export TF_VAR_ecs_memory_gb=$ECS_MEMORY_GB
 export TF_VAR_langfuse_public_key=$LANGFUSE_PUBLIC_KEY

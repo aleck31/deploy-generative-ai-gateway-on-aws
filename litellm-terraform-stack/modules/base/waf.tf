@@ -2,6 +2,7 @@
 # WAFv2 Web ACL
 ###############################################################################
 resource "aws_wafv2_web_acl" "litellm_waf" {
+  count       = var.enable_waf ? 1 : 0
   name        = "LiteLLMWAF"
   description = "WAF for LiteLLM"
   scope       = "REGIONAL" # or CLOUDFRONT
@@ -24,7 +25,7 @@ resource "aws_wafv2_web_acl" "litellm_waf" {
     # - use 'none' if you want to keep the group’s default action 
     # - or 'count' to effectively “disable” or “exclude” from blocking
     override_action {
-      none {}
+      count {}
     }
 
     statement {
@@ -83,7 +84,7 @@ resource "aws_wafv2_web_acl" "litellm_waf" {
     priority = 2
 
     override_action {
-      none {}
+      count {}
     }
 
     statement {

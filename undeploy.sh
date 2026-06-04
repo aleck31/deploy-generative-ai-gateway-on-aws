@@ -209,6 +209,7 @@ export TF_VAR_use_route53=$USE_ROUTE53
 export TF_VAR_use_cloudfront=$USE_CLOUDFRONT
 export TF_VAR_cloudfront_price_class=$CLOUDFRONT_PRICE_CLASS
 export TF_VAR_alb_allowed_prefix_list_id=${ALB_ALLOWED_PREFIX_LIST_ID:-}
+export TF_VAR_enable_waf=${ENABLE_WAF:-true}
 export TF_VAR_ecs_memory_gb=${ECS_MEMORY_GB:-6}
 export TF_VAR_vpc_cidr_block=${VPC_CIDR_BLOCK:-10.31.0.0/16}
 

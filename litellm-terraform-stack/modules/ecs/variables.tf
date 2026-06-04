@@ -363,3 +363,9 @@ variable "ecs_memory_gb" {
   type        = number
   default     = 6
 }
+
+variable "enable_waf" {
+  description = "Enable WAF Web ACL"
+  type        = bool
+  default     = false
+}
