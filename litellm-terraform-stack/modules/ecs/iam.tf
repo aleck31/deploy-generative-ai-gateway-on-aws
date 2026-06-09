@@ -96,7 +96,7 @@ data "aws_iam_policy_document" "task_role_policy_doc" {
 
   statement {
     sid       = "BedrockAccess"
-    actions   = ["bedrock:*"]
+    actions   = ["bedrock:*", "bedrock-mantle:*"]
     resources = ["*"]
   }
 

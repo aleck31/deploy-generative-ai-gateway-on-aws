@@ -1,14 +1,31 @@
 # Deploy Generative AI Gateway on AWS
 
-> **Fork 说明**：本仓库 fork 自 [aws-solutions-library-samples](https://github.com/aws-solutions-library-samples/guidance-for-multi-provider-generative-ai-gateway-on-aws)，包含以下修复和增强：
->
-> - 修复 middleware `requests` 依赖缺失（导致容器崩溃循环重启）
-> - 简化模型配置：用 `config/models.yaml` + `generate-config.py` 替代 per-region yaml 文件
-> - VPC CIDR 参数化：通过 `.env` 中 `VPC_CIDR_BLOCK` 自定义
-> - ALB 安全组参数化：支持自定义 Prefix List 和 CloudFront origin prefix list
-> - ECS 内存参数化：通过 `.env` 中 `ECS_MEMORY_GB` 自定义
-> - 新增 `BEDROCK_INFERENCE_REGION` 参数，支持跨区域调用 Bedrock 模型
-> - 部署完成后自动输出 Master Key 和访问地址
+> Fork 自 [aws-solutions-library-samples](https://github.com/aws-solutions-library-samples/guidance-for-multi-provider-generative-ai-gateway-on-aws)，针对生产环境做了修复和增强。
+
+## Changelog
+
+### v1.0.2
+- 升级默认 LiteLLM 版本至 v1.88.1
+- 添加 `bedrock-mantle:*` IAM 权限，支持 Bedrock Mantle 端点调用
+- models.yaml 同时支持简写和完整两种配置格式
+- 新增 `BEDROCK_MANTLE_API_KEY` 环境变量，自动注入到模型配置中
+
+### v1.0.1
+- 添加 `ENABLE_WAF` 开关（默认 true），可通过 .env 控制是否部署 WAF
+- WAF 规则组设为 count 模式（只记录不阻断），避免误拦 LLM 请求
+- 添加 `aws-marketplace:Subscribe` 权限，解决第三方模型首次调用报错
+- 部署前自动检查版本更新并提示
+
+### v1.0.0
+- 修复 middleware `requests` 依赖缺失（容器崩溃循环重启）
+- 简化模型配置：`config/models.yaml` 替代 17 个 per-region yaml 文件
+- 新增 `BEDROCK_INFERENCE_REGION`，支持跨区域调用 Bedrock
+- 新增 `VPC_CIDR_BLOCK`、`ECS_MEMORY_GB`、`ALB_ALLOWED_PREFIX_LIST_ID` 参数化配置
+- ALB 安全组支持 Prefix List 白名单（自动创建或用户指定）和 CloudFront origin prefix list
+- ALB idle timeout 调至 3000s，支持长任务
+- 日志级别从 DEBUG 改为 INFO
+- 部署完自动输出 Master Key、URL、Prefix List ID
+- 时区自动检测
 
 ## Table of contents
 
@@ -411,6 +428,16 @@ vi config/models.yaml
 # 5. Undeploy
 ./undeploy.sh
 ```
+
+### LiteLLM Version Policy
+
+Default: `v1.88.1`. LiteLLM adopts [SemVer](https://semver.org/) since v1.84.0:
+
+- **MINOR** (v1.88.0 → v1.89.0): weekly release, includes new features
+- **PATCH** (v1.88.0 → v1.88.1): hotfix only, no new features
+- New features (e.g. GPT-5 on Bedrock) only land in the latest MINOR, not backported
+
+See [LiteLLM versioning blog](https://docs.litellm.ai/blog/cleaner-release-versions) for details.
 
 ## Open Source Library
 
