@@ -6,13 +6,37 @@ from typing import AsyncGenerator, Dict, Any, Tuple
 from dotenv import load_dotenv
 from openai import OpenAIError
 
+# --- Endpoint routing (see README v1.1.0) -----------------------------------
+# https://<host>            -> LiteLLM native  : standard OpenAI-compatible passthrough;
+#                                                emits SSE terminator `data: [DONE]`, no session_id
+# https://<host>/plus       -> middleware      : value-added features (chat history via
+#                                                session_id/enable_history, Bedrock Managed Prompts)
+#
+# The OpenAI SDK appends "/chat/completions" to base_url. Both with and without a
+# trailing "/v1" resolve to the same backend within each prefix, so:
+#   base_url = <host>        -> LiteLLM native
+#   base_url = <host>/plus   -> middleware
+#
+# We normalize API_ENDPOINT to the host root (strip any trailing "/v1") so tests
+# are deterministic.
+# ----------------------------------------------------------------------------
+
 load_dotenv()
 
-base_url = os.getenv("API_ENDPOINT")
+_raw_endpoint = (os.getenv("API_ENDPOINT") or "").rstrip("/")
+host_base = (
+    _raw_endpoint[: -len("/v1")].rstrip("/")
+    if _raw_endpoint.endswith("/v1")
+    else _raw_endpoint
+)
 api_key = os.getenv("API_KEY")
 model_id = os.getenv("MODEL_ID")
-print(f'base_url: {base_url} api_key: {api_key} model_id: {model_id}')
-client = OpenAI(base_url=base_url, api_key=api_key)
+print(f"host_base: {host_base} api_key: {api_key} model_id: {model_id}")
+
+# Middleware client -> /plus/chat/completions (chat history, Bedrock prompts)
+client = OpenAI(base_url=f"{host_base}/plus", api_key=api_key)
+# LiteLLM native client -> /chat/completions (standard OpenAI passthrough)
+native_client = OpenAI(base_url=host_base, api_key=api_key)
 managed_prompt_arn = os.getenv("MANAGED_PROMPT_ARN")
 managed_prompt_variable_name = os.getenv("MANAGED_PROMPT_VARIABLE_NAME")
 managed_prompt_variable_value = os.getenv("MANAGED_PROMPT_VARIABLE_VALUE")
@@ -234,7 +258,7 @@ def test_invalid_api_key():
     print("Testing invalid API key handling:", flush=True)
 
     # Create a new client with an invalid API key
-    invalid_client = OpenAI(base_url=base_url, api_key="sk-invalid_key_12345")
+    invalid_client = OpenAI(base_url=host_base, api_key="sk-invalid_key_12345")
 
     # Attempt to make a request with the invalid client
     with pytest.raises(OpenAIError) as exc_info:
@@ -253,3 +277,44 @@ def test_invalid_api_key():
         term in error_message
         for term in ["auth", "authentication", "invalid", "key", "unauthorized"]
     ), "Error message should indicate authentication failure"
+
+
+def test_v1_native_passthrough():
+    """v1.0.4 routing contract: /v1/chat/completions is served by LiteLLM natively.
+
+    Locks in the routing behavior introduced in v1.0.4:
+    - The native /v1 endpoint does NOT inject the middleware's `session_id`.
+    - Native streaming emits the SSE terminator `data: [DONE]` (the middleware
+      path on /chat/completions does not forward it).
+    """
+    # Non-streaming: native path must NOT carry a middleware session_id
+    response = native_client.chat.completions.create(
+        model=model_id,
+        messages=[{"role": "user", "content": small_prompt}],
+        stream=False,
+    )
+    assert response.choices[0].message.content
+    assert (
+        response.model_extra.get("session_id") is None
+    ), "LiteLLM native /v1 must not inject middleware session_id"
+
+    # Streaming (raw SSE): native path must emit `data: [DONE]`
+    raw = requests.post(
+        f"{host_base}/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "model": model_id,
+            "messages": [{"role": "user", "content": small_prompt}],
+            "max_tokens": 16,
+            "stream": True,
+        },
+        stream=True,
+        timeout=60,
+    )
+    body = raw.text
+    assert "data: [DONE]" in body, (
+        "LiteLLM native /v1 streaming should emit the SSE terminator data: [DONE]"
+    )

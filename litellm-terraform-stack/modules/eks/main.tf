@@ -25,31 +25,31 @@ resource "kubernetes_secret" "litellm_api_keys" {
   }
 
   data = {
-    DATABASE_URL           = var.database_url
-    LITELLM_MASTER_KEY    = var.litellm_master_key
-    LITELLM_SALT_KEY      = var.litellm_salt_key
-    OPENAI_API_KEY        = var.openai_api_key
-    AZURE_OPENAI_API_KEY  = var.azure_openai_api_key
-    AZURE_API_KEY         = var.azure_api_key
-    ANTHROPIC_API_KEY     = var.anthropic_api_key
-    GROQ_API_KEY          = var.groq_api_key
-    COHERE_API_KEY        = var.cohere_api_key
-    CO_API_KEY            = var.co_api_key
-    HF_TOKEN              = var.hf_token
-    HUGGINGFACE_API_KEY   = var.huggingface_api_key
-    DATABRICKS_API_KEY    = var.databricks_api_key
-    GEMINI_API_KEY        = var.gemini_api_key
-    CODESTRAL_API_KEY     = var.codestral_api_key
-    MISTRAL_API_KEY       = var.mistral_api_key
-    AZURE_AI_API_KEY      = var.azure_ai_api_key
-    NVIDIA_NIM_API_KEY    = var.nvidia_nim_api_key
-    XAI_API_KEY           = var.xai_api_key
-    PERPLEXITYAI_API_KEY  = var.perplexityai_api_key
-    GITHUB_API_KEY        = var.github_api_key
-    DEEPSEEK_API_KEY      = var.deepseek_api_key
-    AI21_API_KEY          = var.ai21_api_key
-    LANGSMITH_API_KEY     = var.langsmith_api_key
-    LANGFUSE_SECRET_KEY = var.langfuse_secret_key
+    DATABASE_URL         = var.database_url
+    LITELLM_MASTER_KEY   = var.litellm_master_key
+    LITELLM_SALT_KEY     = var.litellm_salt_key
+    OPENAI_API_KEY       = var.openai_api_key
+    AZURE_OPENAI_API_KEY = var.azure_openai_api_key
+    AZURE_API_KEY        = var.azure_api_key
+    ANTHROPIC_API_KEY    = var.anthropic_api_key
+    GROQ_API_KEY         = var.groq_api_key
+    COHERE_API_KEY       = var.cohere_api_key
+    CO_API_KEY           = var.co_api_key
+    HF_TOKEN             = var.hf_token
+    HUGGINGFACE_API_KEY  = var.huggingface_api_key
+    DATABRICKS_API_KEY   = var.databricks_api_key
+    GEMINI_API_KEY       = var.gemini_api_key
+    CODESTRAL_API_KEY    = var.codestral_api_key
+    MISTRAL_API_KEY      = var.mistral_api_key
+    AZURE_AI_API_KEY     = var.azure_ai_api_key
+    NVIDIA_NIM_API_KEY   = var.nvidia_nim_api_key
+    XAI_API_KEY          = var.xai_api_key
+    PERPLEXITYAI_API_KEY = var.perplexityai_api_key
+    GITHUB_API_KEY       = var.github_api_key
+    DEEPSEEK_API_KEY     = var.deepseek_api_key
+    AI21_API_KEY         = var.ai21_api_key
+    LANGSMITH_API_KEY    = var.langsmith_api_key
+    LANGFUSE_SECRET_KEY  = var.langfuse_secret_key
   }
 
   depends_on = [
@@ -66,7 +66,7 @@ resource "kubernetes_secret" "middleware_secrets" {
 
   data = {
     DATABASE_MIDDLEWARE_URL = var.database_url
-    MASTER_KEY             = var.litellm_master_key
+    MASTER_KEY              = var.litellm_master_key
   }
 
   depends_on = [
@@ -103,8 +103,8 @@ resource "kubernetes_deployment" "litellm" {
           "eks.amazonaws.com/nodegroup" = aws_eks_node_group.core_nodegroup.node_group_name
         }
         container {
-          name  = "litellm-container"
-          image = "${var.ecr_litellm_repository_url}:${var.litellm_version}"
+          name              = "litellm-container"
+          image             = "${var.ecr_litellm_repository_url}:${var.litellm_version}"
           image_pull_policy = "Always"
 
           port {
@@ -162,32 +162,32 @@ resource "kubernetes_deployment" "litellm" {
           }
 
           env {
-            name = "LITELLM_LOG"
+            name  = "LITELLM_LOG"
             value = "DEBUG"
           }
 
           env {
-            name = "LITELLM_LOCAL_MODEL_COST_MAP"
+            name  = "LITELLM_LOCAL_MODEL_COST_MAP"
             value = var.disable_outbound_network_access ? "True" : "False"
           }
 
           env {
-            name = "NO_DOCS"
+            name  = "NO_DOCS"
             value = var.disable_swagger_page ? "True" : "False"
           }
 
           env {
-            name = "DISABLE_ADMIN_UI"
+            name  = "DISABLE_ADMIN_UI"
             value = var.disable_admin_ui ? "True" : "False"
           }
 
           env {
-            name = "LANGFUSE_PUBLIC_KEY"
+            name  = "LANGFUSE_PUBLIC_KEY"
             value = var.langfuse_public_key
           }
 
           env {
-            name = "LANGFUSE_HOST"
+            name  = "LANGFUSE_HOST"
             value = var.langfuse_host
           }
 
@@ -203,7 +203,7 @@ resource "kubernetes_deployment" "litellm" {
               port = 4000
             }
             initial_delay_seconds = 20
-            period_seconds       = 10
+            period_seconds        = 10
           }
 
           liveness_probe {
@@ -212,7 +212,7 @@ resource "kubernetes_deployment" "litellm" {
               port = 4000
             }
             initial_delay_seconds = 20
-            period_seconds       = 10
+            period_seconds        = 10
           }
         }
 
@@ -256,7 +256,7 @@ resource "kubernetes_deployment" "litellm" {
               port = 3000
             }
             initial_delay_seconds = 20
-            period_seconds       = 10
+            period_seconds        = 10
           }
 
           liveness_probe {
@@ -265,7 +265,7 @@ resource "kubernetes_deployment" "litellm" {
               port = 3000
             }
             initial_delay_seconds = 20
-            period_seconds       = 10
+            period_seconds        = 10
           }
         }
       }
@@ -280,12 +280,12 @@ resource "kubernetes_ingress_v1" "litellm" {
   metadata {
     name = "litellm-ingress"
     annotations = {
-      "kubernetes.io/ingress.class"                = "alb"
-      "alb.ingress.kubernetes.io/scheme"           = var.public_load_balancer ? "internet-facing" : "internal"
-      "alb.ingress.kubernetes.io/target-type"      = "ip"
-      "alb.ingress.kubernetes.io/listen-ports"     = jsonencode([{"HTTP" = 80}, {"HTTPS" = 443}])
-      "alb.ingress.kubernetes.io/certificate-arn"  = var.certificate_arn
-      "alb.ingress.kubernetes.io/ssl-policy"       = "ELBSecurityPolicy-2016-08"
+      "kubernetes.io/ingress.class"               = "alb"
+      "alb.ingress.kubernetes.io/scheme"          = var.public_load_balancer ? "internet-facing" : "internal"
+      "alb.ingress.kubernetes.io/target-type"     = "ip"
+      "alb.ingress.kubernetes.io/listen-ports"    = jsonencode([{ "HTTP" = 80 }, { "HTTPS" = 443 }])
+      "alb.ingress.kubernetes.io/certificate-arn" = var.certificate_arn
+      "alb.ingress.kubernetes.io/ssl-policy"      = "ELBSecurityPolicy-2016-08"
       "alb.ingress.kubernetes.io/wafv2-acl-arn"   = var.enable_waf ? var.wafv2_acl_arn : ""
     }
   }
@@ -294,112 +294,14 @@ resource "kubernetes_ingress_v1" "litellm" {
     rule {
       host = var.record_name
       http {
+        # All middleware (value-added) features are served under /plus.
+        # The middleware container strips the /plus prefix before routing (see
+        # middleware/app.py StripPrefixMiddleware). Everything else falls through
+        # to "/" -> LiteLLM native (port4000). Two distinct base URLs:
+        #   https://host        -> LiteLLM native (standard OpenAI, emits data: [DONE])
+        #   https://host/plus   -> middleware (chat history, Bedrock prompts, Bedrock interface)
         path {
-          path      = "/bedrock/model"
-          path_type = "Prefix"
-          backend {
-            service {
-              name = kubernetes_service.litellm.metadata[0].name
-              port {
-                name = "port3000"
-              }
-            }
-          }
-        }
-
-        path {
-          path      = "/v1/chat/completions"
-          path_type = "Prefix"
-          backend {
-            service {
-              name = kubernetes_service.litellm.metadata[0].name
-              port {
-                name = "port3000"
-              }
-            }
-          }
-        }
-
-        path {
-          path      = "/chat/completions"
-          path_type = "Prefix"
-          backend {
-            service {
-              name = kubernetes_service.litellm.metadata[0].name
-              port {
-                name = "port3000"
-              }
-            }
-          }
-        }
-
-        path {
-          path      = "/chat-history"
-          path_type = "Prefix"
-          backend {
-            service {
-              name = kubernetes_service.litellm.metadata[0].name
-              port {
-                name = "port3000"
-              }
-            }
-          }
-        }
-
-        path {
-          path      = "/bedrock/chat-history"
-          path_type = "Prefix"
-          backend {
-            service {
-              name = kubernetes_service.litellm.metadata[0].name
-              port {
-                name = "port3000"
-              }
-            }
-          }
-        }
-
-        path {
-          path      = "/bedrock/health/liveliness"
-          path_type = "Prefix"
-          backend {
-            service {
-              name = kubernetes_service.litellm.metadata[0].name
-              port {
-                name = "port3000"
-              }
-            }
-          }
-        }
-
-        path {
-          path      = "/session-ids"
-          path_type = "Prefix"
-          backend {
-            service {
-              name = kubernetes_service.litellm.metadata[0].name
-              port {
-                name = "port3000"
-              }
-            }
-          }
-        }
-
-        path {
-          path      = "/key/generate"
-          path_type = "Prefix"
-          backend {
-            service {
-              name = kubernetes_service.litellm.metadata[0].name
-              port {
-                name = "port3000"
-              }
-            }
-          }
-        }
-
-        path {
-          path      = "/user/new"
+          path      = "/plus"
           path_type = "Prefix"
           backend {
             service {
@@ -466,7 +368,7 @@ resource "kubernetes_service" "litellm" {
 
 # Add AWS Load Balancer Controller
 module "aws_load_balancer_controller_irsa_role" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "5.52.2"
 
   role_name                              = "${var.name}-aws-load-balancer-controller"
@@ -554,7 +456,7 @@ data "aws_lb" "ingress_alb" {
   # The ALB name will be based on the cluster name and ingress name
   # We need to wait for the ingress to create the ALB first
   depends_on = [kubernetes_ingress_v1.litellm]
-  
+
   tags = {
     # The ALB created by the AWS Load Balancer Controller will have this tag
     "elbv2.k8s.aws/cluster" = local.cluster_name

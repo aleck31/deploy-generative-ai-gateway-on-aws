@@ -220,11 +220,11 @@ DEFINITION
 # (9) ECS Service with 2 Target Groups
 ###############################################################################
 resource "aws_ecs_service" "litellm_service" {
-  name            = "LiteLLMService"
-  cluster         = aws_ecs_cluster.this.id
-  task_definition = aws_ecs_task_definition.litellm.arn
-  desired_count   = var.desired_capacity
-  launch_type     = "FARGATE"
+  name                              = "LiteLLMService"
+  cluster                           = aws_ecs_cluster.this.id
+  task_definition                   = aws_ecs_task_definition.litellm.arn
+  desired_count                     = var.desired_capacity
+  launch_type                       = "FARGATE"
   health_check_grace_period_seconds = 300
 
   network_configuration {
@@ -250,15 +250,7 @@ resource "aws_ecs_service" "litellm_service" {
     type = "ECS"
   }
   depends_on = [
-    aws_lb_listener_rule.bedrock_models,
-    aws_lb_listener_rule.openai_completions,
-    aws_lb_listener_rule.chat_completions,
-    aws_lb_listener_rule.chat_history,
-    aws_lb_listener_rule.bedrock_chat_history,
-    aws_lb_listener_rule.bedrock_liveliness,
-    aws_lb_listener_rule.session_ids,
-    aws_lb_listener_rule.key_generate,
-    aws_lb_listener_rule.user_new,
+    aws_lb_listener_rule.middleware_plus,
     aws_lb_listener_rule.catch_all
   ]
 }

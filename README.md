@@ -4,6 +4,14 @@
 
 ## Changelog
 
+### v1.1.0
+- **路由重构**：middleware 增值功能统一迁移到 `/plus/*` 路径前缀，与 LiteLLM 原生端点彻底分离
+  - `https://<host>`（无论带不带 `/v1`）→ LiteLLM 原生，标准 OpenAI 兼容行为，流式含 SSE 终止标记 `data: [DONE]`
+  - `https://<host>/plus`（无论带不带 `/v1`）→ middleware，承载聊天历史（`session_id`）、Bedrock Managed Prompt、Bedrock 原生接口等增值功能
+- 两个 base_url 前缀完全区分，标准 OpenAI 客户端无需纠结是否带 `/v1`
+- ECS（ALB 规则合并为单条 `/plus/*`）与 EKS（ingress 合并为单个 `/plus`）路由同步调整
+- **破坏性变更**：所有 middleware 功能（`session_id` 聊天历史、Bedrock Prompt、`/bedrock/model/*` 接口、`/chat-history`、`/session-ids` 等）的访问路径需加 `/plus` 前缀
+
 ### v1.0.3
 - 升级默认 LiteLLM 版本至 v1.91.3
 - 扩充默认模型列表（Claude Opus 4.8 / Sonnet 5 / Fable 5、Grok 4.3、MiniMax M2.5、Qwen3-VL、Gemma 4）
@@ -37,6 +45,7 @@
 - [Project Overview](#project-overview)
 - [Architecture](#architecture)
 - [How to Deploy](#how-to-deploy)
+- [API Endpoints](#api-endpoints)
 - [Distribution Options](#distribution-options)
 - [AWS Services in this Guidance](#aws-services-in-this-Guidance)
 - [Cost](#cost)
@@ -104,6 +113,22 @@ Default: `v1.91.3`. LiteLLM adopts [SemVer](https://semver.org/) since v1.84.0:
 - New features (e.g. GPT-5 on Bedrock) only land in the latest MINOR, not backported
 
 See [LiteLLM versioning blog](https://docs.litellm.ai/blog/cleaner-release-versions) for details.
+
+## API Endpoints
+
+Two base URLs, selected by prefix. Within each, the `/v1` suffix is optional.
+
+| Path | `data: [DONE]` | `session_id` | Backend |
+|------|:---:|:---:|---------|
+| `https://<host>/v1/chat/completions` | ✅ | — | LiteLLM native |
+| `https://<host>/chat/completions` | ✅ | — | LiteLLM native |
+| `https://<host>/plus/v1/chat/completions` | — | ✅ | Middleware |
+| `https://<host>/plus/chat/completions` | — | ✅ | Middleware |
+
+- **`https://<host>`** — standard OpenAI-compatible API (recommended for most clients).
+- **`https://<host>/plus`** — middleware value-added features: chat history (`session_id` / `enable_history`), Bedrock Managed Prompts, native Bedrock interface (`/plus/bedrock/model/*`).
+
+> **Migrating from < v1.1.0:** middleware features moved from the root paths to the `/plus` prefix. Standard OpenAI clients on `https://<host>/v1` are unaffected.
 
 ## Distribution Options
 

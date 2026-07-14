@@ -7,15 +7,15 @@ resource "aws_lb" "this" {
   load_balancer_type = "application"
   subnets            = var.public_load_balancer ? var.public_subnets : var.private_subnets
   # You need to supply a security group for the ALB itself:
-  security_groups    = [aws_security_group.alb_sg.id]
-  internal           = var.public_load_balancer ? false : true
-  idle_timeout       = 3000
+  security_groups            = [aws_security_group.alb_sg.id]
+  internal                   = var.public_load_balancer ? false : true
+  idle_timeout               = 3000
   drop_invalid_header_fields = true
   access_logs {
     bucket  = aws_s3_bucket.access_log_bucket.bucket
     prefix  = "alb-access-logs-"
     enabled = true
-   }
+  }
 }
 
 # HTTP Listener for CloudFront origin connection
@@ -23,7 +23,7 @@ resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.this.arn
   port              = 80
   protocol          = "HTTP"
-  
+
   # Use tg_4000 as the default
   default_action {
     type             = "forward"
@@ -37,9 +37,9 @@ resource "aws_lb_listener" "https" {
   port              = 443
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  
+
   # Use ACM certificate if provided, otherwise use self-signed certificate
-  certificate_arn   = var.certificate_arn != "" ? var.certificate_arn : aws_acm_certificate.self_signed[0].arn
+  certificate_arn = var.certificate_arn != "" ? var.certificate_arn : aws_acm_certificate.self_signed[0].arn
 
   # Instead of a fixed-response 404, use tg_4000 as the default.
   default_action {
@@ -126,7 +126,7 @@ resource "aws_lb_target_group" "tg_3000" {
 resource "aws_lb_listener_rule" "health_check_exception" {
   count        = var.use_cloudfront ? 1 : 0
   listener_arn = aws_lb_listener.https.arn
-  priority     = 4  # Highest priority we can safely use
+  priority     = 4 # Highest priority we can safely use
 
   action {
     type             = "forward"
@@ -151,7 +151,7 @@ resource "aws_lb_listener_rule" "health_check_exception" {
 resource "aws_lb_listener_rule" "cloudfront_auth" {
   count        = var.use_cloudfront ? 1 : 0
   listener_arn = aws_lb_listener.https.arn
-  priority     = 5  # Second priority, after health checks
+  priority     = 5 # Second priority, after health checks
 
   action {
     type             = "forward"
@@ -172,7 +172,7 @@ resource "aws_lb_listener_rule" "cloudfront_auth" {
 resource "aws_lb_listener_rule" "reject_direct_access" {
   count        = var.use_cloudfront ? 1 : 0
   listener_arn = aws_lb_listener.https.arn
-  priority     = 6  # Third priority
+  priority     = 6 # Third priority
 
   action {
     type = "fixed-response"
@@ -209,55 +209,13 @@ resource "aws_lb_listener_rule" "catch_all" {
 }
 
 
-# Example: Listener Rules for path patterns & priorities
-# bedrock model
-resource "aws_lb_listener_rule" "bedrock_models" {
-  listener_arn = aws_lb_listener.https.arn
-  priority     = 16
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/bedrock/model/*"]
-    }
-  }
-
-  condition {
-    http_request_method {
-      values = ["POST", "GET", "PUT"]
-    }
-  }
-}
-
-# OpenAICompletions
-resource "aws_lb_listener_rule" "openai_completions" {
-  listener_arn = aws_lb_listener.https.arn
-  priority     = 15
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/v1/chat/completions"]
-    }
-  }
-
-  condition {
-    http_request_method {
-      values = ["POST", "GET", "PUT"]
-    }
-  }
-}
-
-# ChatCompletions
-resource "aws_lb_listener_rule" "chat_completions" {
+# All middleware (value-added) features are served under the /plus/* prefix.
+# The middleware container strips the /plus prefix before routing (see
+# middleware/app.py StripPrefixMiddleware). Everything NOT under /plus falls
+# through to the catch-all rule -> LiteLLM native. This gives two distinct base URLs:
+#   https://host        -> LiteLLM native (standard OpenAI, emits data: [DONE])
+#   https://host/plus   -> middleware (chat history, Bedrock prompts, Bedrock interface)
+resource "aws_lb_listener_rule" "middleware_plus" {
   listener_arn = aws_lb_listener.https.arn
   priority     = 14
 
@@ -268,151 +226,7 @@ resource "aws_lb_listener_rule" "chat_completions" {
 
   condition {
     path_pattern {
-      values = ["/chat/completions"]
-    }
-  }
-
-  condition {
-    http_request_method {
-      values = ["POST", "GET", "PUT"]
-    }
-  }
-}
-
-# ChatHistory
-resource "aws_lb_listener_rule" "chat_history" {
-  listener_arn = aws_lb_listener.https.arn
-  priority     = 8
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/chat-history"]
-    }
-  }
-
-  condition {
-    http_request_method {
-      values = ["POST", "GET", "PUT"]
-    }
-  }
-}
-
-# BedrockChatHistory
-resource "aws_lb_listener_rule" "bedrock_chat_history" {
-  listener_arn = aws_lb_listener.https.arn
-  priority     = 9
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/bedrock/chat-history"]
-    }
-  }
-
-  condition {
-    http_request_method {
-      values = ["POST", "GET", "PUT"]
-    }
-  }
-}
-
-# BedrockLiveliness
-resource "aws_lb_listener_rule" "bedrock_liveliness" {
-  listener_arn = aws_lb_listener.https.arn
-  priority     = 10
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/bedrock/health/liveliness"]
-    }
-  }
-
-  condition {
-    http_request_method {
-      values = ["POST", "GET", "PUT"]
-    }
-  }
-}
-
-# SessionIds
-resource "aws_lb_listener_rule" "session_ids" {
-  listener_arn = aws_lb_listener.https.arn
-  priority     = 11
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/session-ids"]
-    }
-  }
-
-  condition {
-    http_request_method {
-      values = ["POST", "GET", "PUT"]
-    }
-  }
-}
-
-# KeyGenerate
-resource "aws_lb_listener_rule" "key_generate" {
-  listener_arn = aws_lb_listener.https.arn
-  priority     = 12
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/key/generate"]
-    }
-  }
-
-  condition {
-    http_request_method {
-      values = ["POST", "GET", "PUT"]
-    }
-  }
-}
-
-# UserNew
-resource "aws_lb_listener_rule" "user_new" {
-  listener_arn = aws_lb_listener.https.arn
-  priority     = 13
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/user/new"]
-    }
-  }
-
-  condition {
-    http_request_method {
-      values = ["POST", "GET", "PUT"]
+      values = ["/plus/*"]
     }
   }
 }
@@ -424,7 +238,7 @@ resource "aws_lb_listener_rule" "user_new" {
 resource "aws_lb_listener_rule" "health_check_exception_http" {
   count        = var.use_cloudfront ? 1 : 0
   listener_arn = aws_lb_listener.http.arn
-  priority     = 4  # Highest priority we can safely use
+  priority     = 4 # Highest priority we can safely use
 
   action {
     type             = "forward"
@@ -444,74 +258,8 @@ resource "aws_lb_listener_rule" "health_check_exception_http" {
   }
 }
 
-# Duplicate all path-specific rules for the HTTP listener with header authentication
-
-# bedrock model for HTTP
-resource "aws_lb_listener_rule" "bedrock_models_http" {
-  count        = var.use_cloudfront ? 1 : 0
-  listener_arn = aws_lb_listener.http.arn
-  priority     = 16
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/bedrock/model/*"]
-    }
-  }
-
-  condition {
-    http_request_method {
-      values = ["POST", "GET", "PUT"]
-    }
-  }
-
-  # Add CloudFront Secret header validation
-  condition {
-    http_header {
-      http_header_name = "X-CloudFront-Secret"
-      values           = ["litellm-cf-${random_password.cloudfront_secret[0].result}"]
-    }
-  }
-}
-
-# OpenAICompletions for HTTP
-resource "aws_lb_listener_rule" "openai_completions_http" {
-  count        = var.use_cloudfront ? 1 : 0
-  listener_arn = aws_lb_listener.http.arn
-  priority     = 15
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/v1/chat/completions"]
-    }
-  }
-
-  condition {
-    http_request_method {
-      values = ["POST", "GET", "PUT"]
-    }
-  }
-
-  # Add CloudFront Secret header validation
-  condition {
-    http_header {
-      http_header_name = "X-CloudFront-Secret"
-      values           = ["litellm-cf-${random_password.cloudfront_secret[0].result}"]
-    }
-  }
-}
-
-# ChatCompletions for HTTP
-resource "aws_lb_listener_rule" "chat_completions_http" {
+# Duplicate the /plus middleware routing for the HTTP listener with header authentication
+resource "aws_lb_listener_rule" "middleware_plus_http" {
   count        = var.use_cloudfront ? 1 : 0
   listener_arn = aws_lb_listener.http.arn
   priority     = 14
@@ -523,205 +271,7 @@ resource "aws_lb_listener_rule" "chat_completions_http" {
 
   condition {
     path_pattern {
-      values = ["/chat/completions"]
-    }
-  }
-
-  condition {
-    http_request_method {
-      values = ["POST", "GET", "PUT"]
-    }
-  }
-
-  # Add CloudFront Secret header validation
-  condition {
-    http_header {
-      http_header_name = "X-CloudFront-Secret"
-      values           = ["litellm-cf-${random_password.cloudfront_secret[0].result}"]
-    }
-  }
-}
-
-# ChatHistory for HTTP
-resource "aws_lb_listener_rule" "chat_history_http" {
-  count        = var.use_cloudfront ? 1 : 0
-  listener_arn = aws_lb_listener.http.arn
-  priority     = 8
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/chat-history"]
-    }
-  }
-
-  condition {
-    http_request_method {
-      values = ["POST", "GET", "PUT"]
-    }
-  }
-
-  # Add CloudFront Secret header validation
-  condition {
-    http_header {
-      http_header_name = "X-CloudFront-Secret"
-      values           = ["litellm-cf-${random_password.cloudfront_secret[0].result}"]
-    }
-  }
-}
-
-# BedrockChatHistory for HTTP
-resource "aws_lb_listener_rule" "bedrock_chat_history_http" {
-  count        = var.use_cloudfront ? 1 : 0
-  listener_arn = aws_lb_listener.http.arn
-  priority     = 9
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/bedrock/chat-history"]
-    }
-  }
-
-  condition {
-    http_request_method {
-      values = ["POST", "GET", "PUT"]
-    }
-  }
-
-  # Add CloudFront Secret header validation
-  condition {
-    http_header {
-      http_header_name = "X-CloudFront-Secret"
-      values           = ["litellm-cf-${random_password.cloudfront_secret[0].result}"]
-    }
-  }
-}
-
-# BedrockLiveliness for HTTP
-resource "aws_lb_listener_rule" "bedrock_liveliness_http" {
-  count        = var.use_cloudfront ? 1 : 0
-  listener_arn = aws_lb_listener.http.arn
-  priority     = 10
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/bedrock/health/liveliness"]
-    }
-  }
-
-  condition {
-    http_request_method {
-      values = ["POST", "GET", "PUT"]
-    }
-  }
-
-  # Add CloudFront Secret header validation
-  condition {
-    http_header {
-      http_header_name = "X-CloudFront-Secret"
-      values           = ["litellm-cf-${random_password.cloudfront_secret[0].result}"]
-    }
-  }
-}
-
-# SessionIds for HTTP
-resource "aws_lb_listener_rule" "session_ids_http" {
-  count        = var.use_cloudfront ? 1 : 0
-  listener_arn = aws_lb_listener.http.arn
-  priority     = 11
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/session-ids"]
-    }
-  }
-
-  condition {
-    http_request_method {
-      values = ["POST", "GET", "PUT"]
-    }
-  }
-
-  # Add CloudFront Secret header validation
-  condition {
-    http_header {
-      http_header_name = "X-CloudFront-Secret"
-      values           = ["litellm-cf-${random_password.cloudfront_secret[0].result}"]
-    }
-  }
-}
-
-# KeyGenerate for HTTP
-resource "aws_lb_listener_rule" "key_generate_http" {
-  count        = var.use_cloudfront ? 1 : 0
-  listener_arn = aws_lb_listener.http.arn
-  priority     = 12
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/key/generate"]
-    }
-  }
-
-  condition {
-    http_request_method {
-      values = ["POST", "GET", "PUT"]
-    }
-  }
-
-  # Add CloudFront Secret header validation
-  condition {
-    http_header {
-      http_header_name = "X-CloudFront-Secret"
-      values           = ["litellm-cf-${random_password.cloudfront_secret[0].result}"]
-    }
-  }
-}
-
-# UserNew for HTTP
-resource "aws_lb_listener_rule" "user_new_http" {
-  count        = var.use_cloudfront ? 1 : 0
-  listener_arn = aws_lb_listener.http.arn
-  priority     = 13
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/user/new"]
-    }
-  }
-
-  condition {
-    http_request_method {
-      values = ["POST", "GET", "PUT"]
+      values = ["/plus/*"]
     }
   }
 
@@ -750,7 +300,7 @@ resource "aws_lb_listener_rule" "catch_all_http" {
       values = ["/*"]
     }
   }
-  
+
   # Add CloudFront Secret header validation
   condition {
     http_header {
@@ -764,7 +314,7 @@ resource "aws_lb_listener_rule" "catch_all_http" {
 resource "aws_lb_listener_rule" "reject_direct_access_http" {
   count        = var.use_cloudfront ? 1 : 0
   listener_arn = aws_lb_listener.http.arn
-  priority     = 99  # Make sure this is the last priority
+  priority     = 99 # Make sure this is the last priority
 
   action {
     type = "fixed-response"
@@ -802,7 +352,7 @@ resource "aws_appautoscaling_policy" "cpu_policy" {
   service_namespace  = aws_appautoscaling_target.ecs_service_target.service_namespace
 
   target_tracking_scaling_policy_configuration {
-    target_value       = var.cpu_target_utilization_percent
+    target_value = var.cpu_target_utilization_percent
     predefined_metric_specification {
       predefined_metric_type = "ECSServiceAverageCPUUtilization"
     }
@@ -819,7 +369,7 @@ resource "aws_appautoscaling_policy" "memory_policy" {
   service_namespace  = aws_appautoscaling_target.ecs_service_target.service_namespace
 
   target_tracking_scaling_policy_configuration {
-    target_value       = var.memory_target_utilization_percent
+    target_value = var.memory_target_utilization_percent
     predefined_metric_specification {
       predefined_metric_type = "ECSServiceAverageMemoryUtilization"
     }

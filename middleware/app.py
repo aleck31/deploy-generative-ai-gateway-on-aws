@@ -32,6 +32,37 @@ from anyio import to_thread
 
 app = FastAPI()
 
+
+class StripPrefixMiddleware:
+    """Strip a leading URL prefix (e.g. /plus) from the request path before routing.
+
+    The ALB / EKS ingress routes `/plus/*` to this middleware container but does
+    NOT strip the prefix (ALB forward actions don't rewrite paths). We remove it
+    here so the application routes stay prefix-agnostic (e.g. `/plus/v1/chat/completions`
+    is served by the existing `/v1/chat/completions` handler).
+
+    This lets the gateway expose two clearly distinct base URLs:
+      - https://host            -> LiteLLM native (standard OpenAI, emits data: [DONE])
+      - https://host/plus       -> this middleware (chat history, Bedrock prompts)
+    """
+
+    def __init__(self, app, prefix: str = "/plus"):
+        self.app = app
+        self.prefix = "/" + prefix.strip("/")
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            path = scope.get("path", "")
+            if path == self.prefix or path.startswith(self.prefix + "/"):
+                scope = dict(scope)
+                scope["path"] = path[len(self.prefix) :] or "/"
+                raw = scope.get("raw_path")
+                if raw is not None:
+                    stripped_raw = raw[len(self.prefix.encode()) :]
+                    scope["raw_path"] = stripped_raw or b"/"
+        await self.app(scope, receive, send)
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allows all origins
@@ -40,6 +71,9 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
     expose_headers=["X-Session-Id"],  # Expose the X-Session-Id header
 )
+
+# Added LAST so it runs FIRST (outermost) — strips /plus before CORS/routing.
+app.add_middleware(StripPrefixMiddleware, prefix="/plus")
 
 LITELLM_ENDPOINT = "http://localhost:4000"
 LITELLM_CHAT = f"{LITELLM_ENDPOINT}/v1/chat/completions"
@@ -1116,22 +1150,6 @@ async def list_session_ids_for_api_key(request: Request):
     session_ids = [row[0] for row in results]
 
     return {"session_ids": session_ids}
-
-
-# ToDo: Enforce that a non-admin user can only create keys for themself if this bug isn't fixed in a timely manner https://github.com/BerriAI/litellm/issues/7336
-@app.post("/key/generate")
-async def forward_key_generate(request: Request):
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"{LITELLM_ENDPOINT}/key/generate",
-            content=await request.body(),
-            headers=request.headers,
-        )
-        return Response(
-            content=response.content,
-            status_code=response.status_code,
-            headers=response.headers,
-        )
 
 
 @app.post("/user/new")
