@@ -1,6 +1,9 @@
 #!/bin/bash
 set -aeuo pipefail
 
+# Run from project root regardless of invocation location
+cd "$(dirname "$0")/.."
+
 aws_region=$(aws ec2 describe-availability-zones --output text --query 'AvailabilityZones[0].[RegionName]')
 echo $aws_region
 
@@ -44,9 +47,14 @@ fi
 
 echo $ARCH
 
-echo "about to destroy"
+echo "about to build and push image"
+cd docker
+./docker-build-and-push.sh $APP_NAME $ARCH
+cd ..
 
-export TF_VAR_vpc_id="vpc-02b681fa786fa8292"
+echo "about to deploy"
+
+export TF_VAR_vpc_id=$VPC_ID
 export TF_VAR_ecr_fake_server_repository=$APP_NAME
 export TF_VAR_architecture=$ARCH
 export TF_VAR_fake_llm_load_testing_endpoint_certifiacte_arn=$FAKE_LLM_LOAD_TESTING_ENDPOINT_CERTIFICATE_ARN
@@ -63,6 +71,20 @@ EOF
 echo "Generated backend.hcl configuration"
 
 terraform init -backend-config=backend.hcl -reconfigure
-terraform destroy -auto-approve
+terraform apply -auto-approve
 
-echo "destroyed"
+echo "deployed"
+
+if [ $? -eq 0 ]; then
+    LITELLM_ECS_CLUSTER=$(terraform output -raw fake_server_ecs_cluster)
+    LITELLM_ECS_TASK=$(terraform output -raw fake_server_ecs_task)
+
+    aws ecs update-service \
+        --cluster $LITELLM_ECS_CLUSTER \
+        --service $LITELLM_ECS_TASK \
+        --force-new-deployment \
+        --desired-count 3 \
+        --no-cli-pager
+else
+    echo "Deployment failed"
+fi

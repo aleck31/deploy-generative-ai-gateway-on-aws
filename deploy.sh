@@ -1,6 +1,12 @@
 #!/bin/bash
 set -aeuo pipefail
 
+# Preflight check
+if [ -f "scripts/preflight-check.sh" ]; then
+    bash scripts/preflight-check.sh || exit 1
+    echo ""
+fi
+
 # Check for updates
 if git rev-parse --git-dir > /dev/null 2>&1; then
     CURRENT_TAG=$(git describe --tags --always 2>/dev/null || echo "unknown")
@@ -217,13 +223,13 @@ echo $ARCH
 
 if [ "$SKIP_BUILD" = false ]; then
     echo "Building and pushing docker image..."
-    ./docker-build-and-deploy.sh $APP_NAME $BUILD_FROM_SOURCE $ARCH
+    ./scripts/docker-build-and-push.sh $APP_NAME $BUILD_FROM_SOURCE $ARCH
 else
     echo "Skipping docker build and deploy step..."
 fi
 
 cd middleware
-./docker-build-and-deploy.sh $MIDDLEWARE_APP_NAME $ARCH
+./docker-build-and-push.sh $MIDDLEWARE_APP_NAME $ARCH
 cd ..
 
 echo "Deploying the log bucket terraform stack..."

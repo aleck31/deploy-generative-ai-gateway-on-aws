@@ -3,11 +3,17 @@
 # api_route: bedrock/ = converse API, bedrock/invoke = invoke API
 
 # Claude
+- name: claude-opus-4-8
+  id: global.anthropic.claude-opus-4-8
+
 - name: claude-opus-4-7
   id: global.anthropic.claude-opus-4-7
 
 - name: claude-opus-4-6
   id: global.anthropic.claude-opus-4-6-v1
+
+- name: claude-sonnet-5
+  id: global.anthropic.claude-sonnet-5
 
 - name: claude-sonnet-4-6
   id: global.anthropic.claude-sonnet-4-6
@@ -18,13 +24,24 @@
 - name: claude-haiku-4-5
   id: global.anthropic.claude-haiku-4-5-20251001-v1:0
 
+- name: claude-fable-5
+  id: global.anthropic.claude-fable-5
+
 # Claude Code (invoke API)
+- name: cc-claude-opus-4-8
+  id: global.anthropic.claude-opus-4-8
+  api_route: bedrock/invoke
+
 - name: cc-claude-opus-4-7
   id: global.anthropic.claude-opus-4-7
   api_route: bedrock/invoke
 
 - name: cc-claude-opus-4-6
   id: global.anthropic.claude-opus-4-6-v1
+  api_route: bedrock/invoke
+
+- name: cc-claude-sonnet-5
+  id: global.anthropic.claude-sonnet-5
   api_route: bedrock/invoke
 
 - name: cc-claude-sonnet-4-6
@@ -48,6 +65,9 @@
 
 - name: qwen3-32b
   id: qwen.qwen3-32b-v1:0
+
+- name: qwen3-vl-235b
+  id: qwen.qwen3-vl-235b-a22b
 
 # DeepSeek
 - name: deepseek-v3
@@ -84,6 +104,9 @@
 - name: kimi-k2.5
   id: moonshotai.kimi-k2.5
 
+- name: minimax-m2.5
+  id: minimax.minimax-m2.5
+
 - name: mistral-large-3
   id: mistral.mistral-large-3-675b-instruct
 
@@ -112,3 +135,16 @@
     model: bedrock_mantle/openai.gpt-5.5
     api_base: https://bedrock-mantle.us-east-2.api.aws/openai/v1
     api_key: os.environ/BEDROCK_MANTLE_API_KEY
+
+# Bedrock Mantle - other models (us-west-2)
+- name: grok-4.3
+  id: xai.grok-4.3
+  api_route: bedrock_mantle
+  api_base: https://bedrock-mantle.us-west-2.api.aws/openai/v1
+  api_key: os.environ/BEDROCK_MANTLE_API_KEY
+
+- name: gemma-4
+  id: google.gemma-4-26b-a4b
+  api_route: bedrock_mantle
+  api_base: https://bedrock-mantle.us-west-2.api.aws/openai/v1
+  api_key: os.environ/BEDROCK_MANTLE_API_KEY

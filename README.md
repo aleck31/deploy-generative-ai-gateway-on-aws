@@ -4,6 +4,11 @@
 
 ## Changelog
 
+### v1.0.3
+- 升级默认 LiteLLM 版本至 v1.91.3
+- 扩充默认模型列表（Claude Opus 4.8 / Sonnet 5 / Fable 5、Grok 4.3、MiniMax M2.5、Qwen3-VL、Gemma 4）
+- 新增 `scripts/preflight-check.sh` 部署前自检（工具依赖、AWS 凭证、IAM 权限），deploy/undeploy 自动调用
+
 ### v1.0.2
 - 升级默认 LiteLLM 版本至 v1.88.1
 - 添加 `bedrock-mantle:*` IAM 权限，支持 Bedrock Mantle 端点调用
@@ -31,15 +36,15 @@
 
 - [Project Overview](#project-overview)
 - [Architecture](#architecture)
-- [AWS Services in this Guidance](#aws-services-in-this-Guidance)
+- [How to Deploy](#how-to-deploy)
 - [Distribution Options](#distribution-options)
+- [AWS Services in this Guidance](#aws-services-in-this-Guidance)
 - [Cost](#cost)
    - [Cost Considerations](#cost-considerations)
    - [Cost Components](#cost-components)
    - [Key Factors Influencing AWS Infrastructure Costs](#key-factors-influencing-aws-infrastructure-costs)
    - [Sample Cost Tables](#sample-cost-tables)
 - [Security](#security)
-- [How to Deploy](#how-to-deploy)
 - [Open Source Library](#open-source-library)
 - [Notices](#notices)
 
@@ -64,6 +69,41 @@ If you are unfamiliar with LiteLLM, it provides a consistent interface to access
 5. External model providers (such as OpenAI, Anthropic, or Vertex AI) are configured using the LiteLLM Admin UI to enable additional model access through LiteLLM’s unified application interface. Integrate pre-existing configurations of third-party providers into the gateway using LiteLLM APIs. 
 6. LiteLLM integrates with [Amazon ElastiCache (Redis OSS)](https://aws.amazon.com/elasticache/), [Amazon Relational Database Service (RDS)](https://aws.amazon.com/rds/), and [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/) services. Amazon ElastiCache enables multi-tenant distribution of application settings and prompt caching. Amazon RDS enables persistence of virtual API keys and other configuration settings provided by LiteLLM. Secrets Manager stores external model provider credentials and other sensitive settings securely.
 7. LiteLLM and the API/middleware store application sends logs to the dedicated [Amazon S3](https://aws.amazon.com/s3) storage bucket for troubleshooting and access analysis. 
+
+## How to deploy
+
+```bash
+# 1. Configure
+cp .env.template .env
+# Edit .env: set LITELLM_VERSION, BEDROCK_INFERENCE_REGION, VPC_CIDR_BLOCK, etc.
+#   DEPLOYMENT_PLATFORM     — ECS or EKS
+#   BEDROCK_INFERENCE_REGION — Region for Bedrock model calls (empty = deployment region)
+#   ECS_VCPUS / ECS_MEMORY_GB — Compute resources
+#   ALB_ALLOWED_PREFIX_LIST_ID — Restrict ALB ingress to a prefix list
+#   USE_CLOUDFRONT / USE_ROUTE53 — Distribution options (see Distribution Options)
+
+# 2. Customize model list
+vi config/models.yaml
+
+# 3. Deploy
+./deploy.sh
+
+# 4. Update models (after editing models.yaml)
+./update-litellm-config.sh
+
+# 5. Undeploy
+./undeploy.sh
+```
+
+### LiteLLM Version Policy
+
+Default: `v1.91.3`. LiteLLM adopts [SemVer](https://semver.org/) since v1.84.0:
+
+- **MINOR** (v1.91.0 → v1.92.0): weekly release, includes new features
+- **PATCH** (v1.91.0 → v1.91.3): hotfix only, no new features
+- New features (e.g. GPT-5 on Bedrock) only land in the latest MINOR, not backported
+
+See [LiteLLM versioning blog](https://docs.litellm.ai/blog/cleaner-release-versions) for details.
 
 ## Distribution Options
 
@@ -403,41 +443,6 @@ This guidance can be deployed in any AWS Region where Amazon Bedrock is availabl
 ### Quotas
 
 Ensure you have sufficient [AWS service quotas](https://docs.aws.amazon.com/general/latest/gr/aws_service_limits.html) for ECS/EKS, VPC, ALB, RDS, and ElastiCache in your deployment region.
-
-## How to deploy
-
-```bash
-# 1. Configure
-cp .env.template .env
-# Edit .env: set LITELLM_VERSION, BEDROCK_INFERENCE_REGION, VPC_CIDR_BLOCK, etc.
-#   DEPLOYMENT_PLATFORM     — ECS or EKS
-#   BEDROCK_INFERENCE_REGION — Region for Bedrock model calls (empty = deployment region)
-#   ECS_VCPUS / ECS_MEMORY_GB — Compute resources
-#   ALB_ALLOWED_PREFIX_LIST_ID — Restrict ALB ingress to a prefix list
-#   USE_CLOUDFRONT / USE_ROUTE53 — Distribution options (see Distribution Options)
-
-# 2. Customize model list
-vi config/models.yaml
-
-# 3. Deploy
-./deploy.sh
-
-# 4. Update models (after editing models.yaml)
-./update-litellm-config.sh
-
-# 5. Undeploy
-./undeploy.sh
-```
-
-### LiteLLM Version Policy
-
-Default: `v1.88.1`. LiteLLM adopts [SemVer](https://semver.org/) since v1.84.0:
-
-- **MINOR** (v1.88.0 → v1.89.0): weekly release, includes new features
-- **PATCH** (v1.88.0 → v1.88.1): hotfix only, no new features
-- New features (e.g. GPT-5 on Bedrock) only land in the latest MINOR, not backported
-
-See [LiteLLM versioning blog](https://docs.litellm.ai/blog/cleaner-release-versions) for details.
 
 ## Open Source Library
 

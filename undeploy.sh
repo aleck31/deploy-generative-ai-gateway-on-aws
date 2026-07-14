@@ -1,6 +1,12 @@
 #!/bin/bash
 set -aeuo pipefail
 
+# Preflight check
+if [ -f "scripts/preflight-check.sh" ]; then
+    bash scripts/preflight-check.sh --no-docker || exit 1
+    echo ""
+fi
+
 # Parse command line arguments
 if [ ! -f "config/config.yaml" ]; then
     echo "config/config.yaml does not exist, aborting"
