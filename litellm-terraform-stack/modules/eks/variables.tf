@@ -233,6 +233,25 @@ variable "okta_issuer" {
   type        = string
 }
 
+variable "lark_webhook_url" {
+  description = "Lark (Feishu) custom-bot webhook URL for alerting (empty = disabled)"
+  type        = string
+  default     = ""
+}
+
+variable "lark_webhook_secret" {
+  description = "Optional Lark signature-verification secret"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "timezone" {
+  description = "IANA timezone for container system time (controls alert/report timestamps)"
+  type        = string
+  default     = "UTC"
+}
+
 
 variable "certificate_arn" {
   description = "ARN of the ACM certificate"

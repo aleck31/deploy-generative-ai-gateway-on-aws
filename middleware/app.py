@@ -75,6 +75,11 @@ app.add_middleware(
 # Added LAST so it runs FIRST (outermost) — strips /plus before CORS/routing.
 app.add_middleware(StripPrefixMiddleware, prefix="/plus")
 
+# Lark (Feishu) alerting bridge — internal /webhook/slack-to-lark endpoint.
+from lark_alerting import router as lark_router  # noqa: E402
+
+app.include_router(lark_router)
+
 LITELLM_ENDPOINT = "http://localhost:4000"
 LITELLM_CHAT = f"{LITELLM_ENDPOINT}/v1/chat/completions"
 

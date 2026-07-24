@@ -112,6 +112,11 @@ resource "kubernetes_deployment" "litellm" {
           }
 
           env {
+            name  = "TZ"
+            value = var.timezone
+          }
+
+          env {
             name  = "LITELLM_CONFIG_BUCKET_NAME"
             value = var.config_bucket_name
           }
@@ -225,6 +230,11 @@ resource "kubernetes_deployment" "litellm" {
           }
 
           env {
+            name  = "TZ"
+            value = var.timezone
+          }
+
+          env {
             name  = "OKTA_ISSUER"
             value = var.okta_issuer
           }
@@ -232,6 +242,16 @@ resource "kubernetes_deployment" "litellm" {
           env {
             name  = "OKTA_AUDIENCE"
             value = var.okta_audience
+          }
+
+          env {
+            name  = "LARK_WEBHOOK_URL"
+            value = var.lark_webhook_url
+          }
+
+          env {
+            name  = "LARK_WEBHOOK_SECRET"
+            value = var.lark_webhook_secret
           }
 
           env {

@@ -77,6 +77,9 @@ module "ecs_cluster" {
   langsmith_default_run_name = var.langsmith_default_run_name
   okta_audience = var.okta_audience
   okta_issuer = var.okta_issuer
+  lark_webhook_url = var.lark_webhook_url
+  lark_webhook_secret = var.lark_webhook_secret
+  timezone = var.timezone
   certificate_arn = var.certificate_arn
   wafv2_acl_arn = module.base.WafAclArn
   record_name = var.record_name
@@ -176,6 +179,9 @@ module "eks_cluster" {
   langsmith_default_run_name = var.langsmith_default_run_name
   okta_audience = var.okta_audience
   okta_issuer = var.okta_issuer
+  lark_webhook_url = var.lark_webhook_url
+  lark_webhook_secret = var.lark_webhook_secret
+  timezone = var.timezone
   certificate_arn = var.certificate_arn
   wafv2_acl_arn = module.base.WafAclArn
   record_name = var.record_name

@@ -32,11 +32,12 @@ echo $aws_region
 source .env
 
 # Generate config.yaml from models.yaml + base settings
-if [ ! -f "config/config.yaml" ]; then
-  echo "Generating config/config.yaml from models.yaml..."
-  export BEDROCK_INFERENCE_REGION=${BEDROCK_INFERENCE_REGION:-$aws_region}
-  python3 scripts/generate-config.py
-fi
+# Always regenerate config/config.yaml from models.yaml + current .env so deploys
+# reliably pick up config changes (models, alerting, timezone). A stale local
+# config.yaml must never be deployed as-is.
+echo "Generating config/config.yaml from models.yaml..."
+export BEDROCK_INFERENCE_REGION=${BEDROCK_INFERENCE_REGION:-$aws_region}
+python3 scripts/generate-config.py
 
 if [ ! -f ".env" ]; then
     echo "Error: .env file missing. Creating it from .env.template"
@@ -339,6 +340,9 @@ export TF_VAR_langsmith_project=$LANGSMITH_PROJECT
 export TF_VAR_langsmith_default_run_name=$LANGSMITH_DEFAULT_RUN_NAME
 export TF_VAR_okta_audience=$OKTA_AUDIENCE
 export TF_VAR_okta_issuer=$OKTA_ISSUER
+export TF_VAR_lark_webhook_url=${LARK_WEBHOOK_URL:-}
+export TF_VAR_lark_webhook_secret=${LARK_WEBHOOK_SECRET:-}
+export TF_VAR_timezone="${LITELLM_TIMEZONE:-$(timedatectl show -p Timezone --value 2>/dev/null || echo UTC)}"
 export TF_VAR_record_name=$RECORD_NAME
 export TF_VAR_hosted_zone_name=$HOSTED_ZONE_NAME
 export TF_VAR_create_private_hosted_zone_in_existing_vpc=$CREATE_PRIVATE_HOSTED_ZONE_IN_EXISTING_VPC

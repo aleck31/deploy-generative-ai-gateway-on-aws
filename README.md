@@ -4,6 +4,14 @@
 
 ## Changelog
 
+### v1.2.0
+- 新增 **Lark（飞书）告警**支持：只需在 `.env` 设置 `LARK_WEBHOOK_URL`（可选 `LARK_WEBHOOK_SECRET` 签名校验）即可，`deploy.sh` 自动接线
+  - middleware 新增内部端点 `/webhook/slack-to-lark`（独立模块 `middleware/lark_alerting.py`），把 LiteLLM 的 Slack 格式告警翻译成 Lark 卡片转发,覆盖全部告警类型
+  - LiteLLM 无原生 Lark 通道,此处借用其 Slack 通道 + middleware 桥接实现（原理同官方 Discord/Teams 集成）
+- 新增原生 **Slack 告警**支持：设置 `SLACK_WEBHOOK_URL` 即可
+- Slack 与 Lark **可独立启用、互不干扰**；两者都配置时告警同时发往二者（`alert_to_webhook_url` fan-out）
+- `deploy.sh` 现在**总是重新生成** `config/config.yaml`，避免遗留的旧配置导致部署未生效
+
 ### v1.1.0
 - **路由重构**：middleware 增值功能统一迁移到 `/plus/*` 路径前缀，与 LiteLLM 原生端点彻底分离
   - `https://<host>`（无论带不带 `/v1`）→ LiteLLM 原生，标准 OpenAI 兼容行为，流式含 SSE 终止标记 `data: [DONE]`
@@ -129,6 +137,22 @@ Two base URLs, selected by prefix. Within each, the `/v1` suffix is optional.
 - **`https://<host>/plus`** — middleware value-added features: chat history (`session_id` / `enable_history`), Bedrock Managed Prompts, native Bedrock interface (`/plus/bedrock/model/*`).
 
 > **Migrating from < v1.1.0:** middleware features moved from the root paths to the `/plus` prefix. Standard OpenAI clients on `https://<host>/v1` are unaffected.
+
+## Alerting
+
+LiteLLM alerts (budget/spend, LLM exceptions, slow/hanging requests, daily & weekly reports, DB errors, model outages) can be delivered to **Slack** and/or **Lark (Feishu)**. Both are optional and independent — configure either, both, or neither in `.env`; `deploy.sh` wires everything automatically.
+
+| `.env` variable | Effect |
+|-----------------|--------|
+| `SLACK_WEBHOOK_URL` | Send alerts to Slack (native LiteLLM alerting) |
+| `LARK_WEBHOOK_URL` | Send alerts to a Lark custom-bot webhook |
+| `LARK_WEBHOOK_SECRET` | Optional — Lark signature-verification secret |
+
+When both `SLACK_WEBHOOK_URL` and `LARK_WEBHOOK_URL` are set, alerts fan out to both.
+
+**How Lark works:** LiteLLM has no native Lark channel (Lark isn't Slack-compatible). The middleware exposes an internal endpoint (`/webhook/slack-to-lark`, module `middleware/lark_alerting.py`) that receives LiteLLM's Slack-format alerts, translates them into Lark interactive cards, and forwards them to `LARK_WEBHOOK_URL` (signing them if `LARK_WEBHOOK_SECRET` is set). This mirrors how LiteLLM officially integrates Discord/Teams via Slack-compatible webhooks. The endpoint is internal-only (localhost between containers) and is not exposed via the ALB/ingress.
+
+**Lark bot security:** signature verification is recommended (set `LARK_WEBHOOK_SECRET`); IP allowlisting is not recommended (the middleware egresses via the NAT gateway EIP); custom keywords may not match interactive cards reliably.
 
 ## Distribution Options
 
